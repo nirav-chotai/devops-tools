@@ -10,6 +10,7 @@ Installing Ansible on Windows
 (1) Install cygwin from https://cygwin.com/install.html
 
 (2) Install the following packages:
+
         curl
         python
         python-setuptools
