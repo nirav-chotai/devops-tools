@@ -12,7 +12,7 @@ Installing Ansible on Windows
 (2) Install the following packages:
 
         curl
-        python
+        python3
         python-setuptools
         python-crypto
         openssl
