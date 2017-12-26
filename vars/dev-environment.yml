@@ -1,0 +1,35 @@
+---
+# set these parameters to control the region, keypair, and AMI that are launched
+ec2_region: us-east-2
+instances_keypair: Garvit.test-instance
+image_id: ami-82f4dae7
+
+# security groups to be created
+security_groups:
+  - name: web
+    desc: the security group for the web server 
+    rules:
+      - proto: tcp
+        from_port: "80"
+        to_port: "80"
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: "443"
+        to_port: "443"
+        cidr_ip: 0.0.0.0/0
+      - proto: tcp
+        from_port: 22
+        to_port: 22
+        cidr_ip: 0.0.0.0/0
+
+ec2_instances:
+  - instance_type: t2.micro
+    image: "{{ image_id }}"
+    assign_public_ip: true
+    keypair: "{{instances_keypair}}"
+    group: ['web']
+    instance_tags: 
+        Name: ansible-instance
+    exact_count: 1
+    count_tag: 
+        Name: ansible-instance
