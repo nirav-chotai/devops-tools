@@ -1,0 +1,98 @@
+---
+ - hosts: localhost
+   connection: local
+
+   vars:
+      keyName: sanket-ubuntu-2
+      instanceType: t2.micro
+      new_instanceType: t2.nano
+      securityGroup: sg-e0f31094
+      regionId: us-east-1
+      count: 1
+      accessKey: AKIAIL3NXEZDVJ3HQLUA
+      secretKey: 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
+      imageId: ami-aa2ea6d0
+      state: started
+   tasks:
+    - name: create a vm
+      ec2:
+       aws_access_key: "{{ accessKey }}"
+       aws_secret_key: "{{ secretKey }}"
+       key_name: "{{ keyName }}"
+       instance_type: "{{ instanceType }}"
+       image: "{{ imageId }}"
+       region: "{{ regionId }}"
+       group_id: "{{ securityGroup }}"
+       wait: true
+       count: "{{ count }}"
+      register: ec2
+    - debug:
+       var: ec2.instance_ids[0]
+
+    - name: add host to inventory
+      add_host:
+       hostname: "{{ ec2.instances[0].public_ip }}"
+       groupname: EC2
+    - name: Wait for the instances to boot by checking the ssh port
+      local_action: wait_for host={{ec2.instances[0].public_ip}} port=22 delay=60 timeout=320 state=started
+
+    - pause:
+       prompt: "Instance is created, next is to install nodejs"
+
+ - name: install
+   hosts: EC2
+   user: ubuntu
+   sudo: yes
+   gather_facts: false
+   tasks:
+    - name: install nodejs
+      raw: sudo apt-get update
+    - raw: sudo sudo apt-get -y install figlet
+    - pause:
+       prompt: "nodejs is installed, next is to stop the instance"
+ - hosts: localhost
+   connection: local
+
+   vars:
+      new_instanceType: t2.nano
+      regionId: us-east-1
+      accessKey: AKIAIL3NXEZDVJ3HQLUA
+      secretKey: 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
+   tasks:
+    - name: stop instance
+      ec2:
+       aws_access_key: "{{ accessKey }}"
+       aws_secret_key: "{{ secretKey }}"
+       state: "stopped"
+       wait: true
+       instance_ids: "{{ ec2.instance_ids[0] }}"
+       region: "{{ regionId }}"
+    - pause:
+       prompt: "Instance is now stopped, next is to modify it instanceType"
+
+    - name: modify a vm
+      command: aws ec2 modify-instance-attribute --instance-id "{{ ec2.instance_ids[0] }}" --instance-type "{{ new_instanceType }}"
+    - pause:
+       prompt: "Instance is modified, next is to start it again"
+    - name: start instance
+      ec2:
+       aws_access_key: "{{ accessKey }}"
+       aws_secret_key: "{{ secretKey }}"
+       state: "running"
+       wait: true
+       instance_ids: "{{ ec2.instance_ids[0] }}"
+       region: "{{ regionId }}"
+    - pause:
+       prompt: "Instance is ready, next is to terminate it"
+
+    - name: terminate instance
+      ec2:
+       aws_access_key: "{{ accessKey }}"
+       aws_secret_key: "{{ secretKey }}"
+       state: "absent"
+       wait: true
+       instance_ids: "{{ ec2.instance_ids[0] }}"
+       region: "{{ regionId }}"
+
+
+
